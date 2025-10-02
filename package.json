@@ -1,7 +1,8 @@
 {
-  "name": "mpi",
+  "name": "mp2",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://github.com/pedro6uiuc/CS_409_MP2_pedro6",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
