@@ -2,12 +2,9 @@ import React from 'react';
 import logo from './icono.png';
 import './App.css';
 import {
-  BrowserRouter as Router,
   Routes,
   Route,
   Link,
-  RouteMatch,
-  useParams,
   BrowserRouter
 } from "react-router-dom";
 
