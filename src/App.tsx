@@ -135,9 +135,11 @@ function SearchTable({monsters, filterText, order, sort}:any){
   setFilterMonsters(temp);
   }, [filterText, monsters, order, sort]);
   return(
-    <ul>
-      {filteredMonsters}
-    </ul>
+      <nav>
+        <ul>
+          {filteredMonsters}
+        </ul>
+      </nav>
   )
 }
 
@@ -180,7 +182,7 @@ function SearchBar({filterText,onFilterTextChange, order, onOrderChange, onSortC
   );
 }
 function SearchRow({slug, name, challenge_rating}:any){
-  return <li key={slug} className='searchRow'><p>{name}</p> <p>Cr:{challenge_rating}</p></li>;
+  return <li key={slug} className='searchRow'><Link className='navbutton' to = {"/"+name}><p>{name}</p> <p>Cr:{challenge_rating}</p></Link></li>;
 
 }
 function Galery (){
@@ -205,7 +207,30 @@ function Galery (){
   // eslint-disable-next-line
   }, [nextPage]);
   useEffect (()=>{
-    const monsterTypes = [
+    // eslint-disable-next-line
+    const renderedList = monsterList.map((monster:any) => {
+      if (filter === "all"){
+        return <GaleryImage monster= {monster}/>;
+      }else{
+        if (monster.type.toLowerCase() === filter){
+          return <GaleryImage monster = {monster}/>;
+        }
+      }
+          });
+      setDisplayList(renderedList);
+  }, [filter,monsterList]);
+  return (<div className='Galery'>
+  <h1>GALERY</h1>
+  <GaleryFilter filter = {filter} onChangeFilter = {setFilter}/>
+  <div className='galeryDisplay'>
+    {displayList}
+  </div>
+  </div>)
+  
+}
+
+function GaleryImage ({monster}:any){
+  const monsterTypes = [
         {"type": "aberration", "file": aberration},
         {"type": "beast", "file": beast},
         {"type": "celestial", "file": celestial},
@@ -221,58 +246,28 @@ function Galery (){
         {"type": "ooze", "file": ooze},
         {"type":"undead", "file":undead}
       ];
-    // eslint-disable-next-line
-    const renderedList = monsterList.map((monster:any) => {
-      if (filter === "all"){
-        if (monster.img_main === null){
-        const lowerCaseMonsterType = monster.type.toLowerCase();
+  if (monster.img_main === null){
+      const lowerCaseMonsterType = monster.type.toLowerCase();
       //Not using for each to end execution when desired result is achived
       for (let i = 0; i < monsterTypes.length; i++){
         if (monsterTypes[i].type === lowerCaseMonsterType){
           console.log("Hey");
-          return (<div className='monsterImagediv'>
-                <img className='monsterImageimg' src ={monsterTypes[i].file} alt={monster.name}/>
-                <p>{monster.name}</p>
-              </div>)
+          return (<Link to = {"/" + monster.name.toLowerCase()}>
+                <div className='monsterImagediv'>
+                  <img className='monsterImageimg' src ={monsterTypes[i].file} alt={monster.name}/>
+                  <p>{monster.name}</p>
+                </div>
+              </Link>
+              )
         }
       }
+      return <></>;
       }else{
       return (<div className='monsterImagediv'>
             <img className='monsterImageimg' src ={monster.img_main} alt = {monster.name}/>
           </div>)
       }
-      }else{
-        if (monster.type.toLowerCase() === filter){
-          if (monster.img_main === null){
-            const lowerCaseMonsterType = monster.type.toLowerCase();
-      //Not using for each to end execution when desired result is achived
-            for (let i = 0; i < monsterTypes.length; i++){
-              if (monsterTypes[i].type === lowerCaseMonsterType){
-                console.log("Hey");
-                return (<div className='monsterImagediv'>
-                      <img className='monsterImageimg' src ={monsterTypes[i].file} alt={monster.name}/>
-                      <p>{monster.name}</p>
-                    </div>)
-              }
-            }
-            }else{
-            return (<div className='monsterImagediv'>
-                  <img className='monsterImageimg' src ={monster.img_main} alt={monster.name}/>
-                </div>)
-            }
-        }
-      }
-          });
-      setDisplayList(renderedList);
-  }, [filter,monsterList]);
-  return (<div className='Galery'>
-  <h1>GALERY</h1>
-  <GaleryFilter filter = {filter} onChangeFilter = {setFilter}/>
-  <div className='galeryDisplay'>
-    {displayList}
-  </div>
-  </div>)
-  
+
 }
 
 function GaleryFilter({filter, onChangeFilter}:any){
