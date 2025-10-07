@@ -100,3 +100,30 @@
   font: inherit;
   cursor: pointer;
 }
+.galeryDisplay{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  
+}
+.monsterImagediv{
+  width: 300px;
+  height: auto;
+  margin: 1%;
+}
+.monsterImageimg{
+  max-width: 100%;
+}
+.Galery{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.galeryFilter{
+  width: 80%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
