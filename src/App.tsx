@@ -338,14 +338,10 @@ function GaleryFilter({filter, onChangeFilter}:any){
 function DetailedMonster(){
     const {monsterName} = useParams();
     const [monsterList, setMonsterList]:any = useState([]);
-    const firstRunTest = useRef(false);
     const [monsterDisplay, setMonsterDisplay] = useState(<h1>Loading...</h1>);
     const [found, setFound] = useState(false);
     const [nextPage, setNextPage] = useState("https://api.open5e.com/monsters/?document__slug__iexact=wotc-srd");
     useEffect(() =>{
-      if(firstRunTest.current === false){
-        firstRunTest.current = true;
-      }else{
       if (nextPage){
           axios
     .get(nextPage)
@@ -425,7 +421,6 @@ function DetailedMonster(){
     }
       }
     }
-  }
     // eslint-disable-next-line
     }, [nextPage, monsterName])
     useEffect(() =>{
