@@ -338,7 +338,6 @@ function GaleryFilter({filter, onChangeFilter}:any){
 function DetailedMonster(){
     const {monsterName} = useParams();
     const [monsterList, setMonsterList]:any = useState([]);
-    const  monsterIndex = useRef(0);
     const firstRunTest = useRef(false);
     const [monsterDisplay, setMonsterDisplay] = useState(<h1>Loading...</h1>);
     const [found, setFound] = useState(false);
@@ -362,7 +361,9 @@ function DetailedMonster(){
 
             if (monsters[i].name.toLowerCase() === monsterName.toLowerCase()){
               tempFound = true;
-              setMonsterDisplay(<h1><MonsterStatBlock monster = {monsters[i]}/></h1>);
+              setMonsterDisplay(<><h1>Loading buttons ...</h1>
+              <h1><MonsterStatBlock monster = {monsters[i]}/></h1>
+              </>);
 
             }else{
               i++;
@@ -371,43 +372,54 @@ function DetailedMonster(){
         }
 
       }
-      monsterIndex.current +=i;
       setFound(tempFound);
       setNextPage(page.data.next);
     })
     .catch(error => console.log(error))
     }else{
-      console.log(monsterIndex);
       if (found === false){
           setMonsterDisplay(<h1>Not found</h1>);
       }else{
-        console.log(monsterIndex.current);
-        console.log(monsterList.length)
-        if (monsterIndex.current === 0){
+        var tempFound = false;
+        var i = 0;
+          while( tempFound === false&&i<monsterList.length){
+          if (monsterName) {
+            if(tempFound === false){
+              console.log(i);
+              if (monsterList[i].name.toLowerCase() === monsterName.toLowerCase()){
+                tempFound = true;
+              }else{
+                i++;
+              }
+            }
+          }
+
+          }
+        if (i === 0){
       setMonsterDisplay(<>
             <nav className='navbar' >
                   <Link className='navbutton' to ={"/"+ monsterList[monsterList.length -1].name}>Previous</Link>
-                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current+1].name}>Next</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[i+1].name}>Next</Link>
                 </nav>
-            {monsterDisplay}
+            <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
             </>)
         
     }else{
-    if (monsterIndex.current === monsterList.length -1){
+    if (i === monsterList.length -1){
       setMonsterDisplay(<>
             <nav className='navbar' >
-                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current-1].name}>Previous</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[i-1].name}>Previous</Link>
                   <Link className='navbutton' to ={"/"+ monsterList[0].name}>Next</Link>
                 </nav>
-            {monsterDisplay}
+            <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
             </>)
       }else{
         setMonsterDisplay(<>
           <nav className='navbar' >
-            <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current-1].name}>Previous</Link>
-            <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current +1].name}>Next</Link>
+            <Link className='navbutton' to ={"/"+ monsterList[i-1].name}>Previous</Link>
+            <Link className='navbutton' to ={"/"+ monsterList[i +1].name}>Next</Link>
           </nav>
-          {monsterDisplay}
+          <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
         </>)
       }
     }
@@ -438,7 +450,7 @@ function DetailedMonster(){
             setMonsterDisplay(<>
             <nav className='navbar' >
                   <Link className='navbutton' to ={"/"+ monsterList[monsterList.length -1].name}>Previous</Link>
-                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current+1].name}>Next</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[i+1].name}>Next</Link>
                 </nav>
             <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
             </>)
@@ -446,7 +458,7 @@ function DetailedMonster(){
           else{if (i === monsterList.length -1){
               setMonsterDisplay(<>
             <nav className='navbar' >
-                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current-1].name}>Previous</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[i-1].name}>Previous</Link>
                   <Link className='navbutton' to ={"/"+ monsterList[0].name}>Next</Link>
                 </nav>
             <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
@@ -454,19 +466,18 @@ function DetailedMonster(){
           }else{
               setMonsterDisplay(<>
             <nav className='navbar' >
-                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current-1].name}>Previous</Link>
-                   <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current+1].name}>Next</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[i-1].name}>Previous</Link>
+                   <Link className='navbutton' to ={"/"+ monsterList[i+1].name}>Next</Link>
                 </nav>
             <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
             </>)
           }}
-          monsterIndex.current = i;
         }else{
-          monsterIndex.current = 0;
           setNextPage("https://api.open5e.com/monsters/?document__slug__iexact=wotc-srd");
         }
       setFound(tempFound)
       }
+          // eslint-disable-next-line
     },[monsterName])
     
     return (<div className='detailedMonster'>
