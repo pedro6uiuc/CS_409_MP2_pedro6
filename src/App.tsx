@@ -343,13 +343,15 @@ function DetailedMonster(){
     const [nextPage, setNextPage] = useState("https://api.open5e.com/monsters/?document__slug__iexact=wotc-srd");
     useEffect(() =>{
       if (nextPage){
-          axios
+        console.log("begining");
+      axios
     .get(nextPage)
     .then((page) => {
       const monsters = page.data.results;
       var i = 0;
       var tempFound = found;
       setMonsterList(monsterList.concat(page.data.results));
+      console.log("beginning while");
       while( tempFound === false&&i<monsters.length){
         if (monsterName) {
           if(tempFound === false){
@@ -368,6 +370,7 @@ function DetailedMonster(){
         }
 
       }
+      console.log("endign while");
       setFound(tempFound);
       setNextPage(page.data.next);
     })
