@@ -45,9 +45,10 @@ function App() {
           </nav>
           <Routes>
             <Route path='/'></Route>
+            <Route path='/:monsterName' element = {<DetailedMonster/>}/>
             <Route path= "/search" element = {<Search/>}/>
             <Route path='/galery' element = {<Galery/>}/>
-            <Route path='/:monsterName' element = {<DetailedMonster/>}/>
+
           </Routes>
     </BrowserRouter>
     </div>
@@ -59,6 +60,7 @@ function App() {
 //Search Component
 function Search (){
   const [monsterList, setMonsterList] = useState([]);
+  const [fetchMonsters, setFetchMonsters] = useState([])
   const [nextPage, setNextPage] = useState("https://api.open5e.com/monsters/?document__slug__iexact=wotc-srd");
   const [displayList, setDisplayList] = useState(<h1>Loading...</h1>);
   const [filterText, setFilterText] = useState('');
@@ -67,16 +69,22 @@ function Search (){
   const first_render = useRef(true);
   //Chaching the API 
   useEffect(() => {
+    //Used to improve the efficiency of the page once the data from the API has been fetched, it is updated every time is rendered.
+    const localMonsters = sessionStorage.getItem("localMonsters");
+    if (localMonsters != null){
+      setMonsterList(JSON.parse(localMonsters));
+    }
     if (nextPage){
           axios
     .get(nextPage)
     .then((page) => {
-
-      const monsters = monsterList.concat(page.data.results);
-      setMonsterList(monsters);
+      const monsters = fetchMonsters.concat(page.data.results);
+      setFetchMonsters(monsters);
       setNextPage(page.data.next);
     })
     .catch(error => console.log(error))
+    }else{
+      sessionStorage.setItem("localMonsters", JSON.stringify(fetchMonsters));
     }
   //Adding the disable-next-line because it doesn't need to run when monsterList is changed, this could affect the rendering of the list.
 
@@ -87,10 +95,14 @@ function Search (){
     if (first_render.current === true){
       first_render.current = false;
     }else{
+      if (fetchMonsters.length > monsterList.length){
+        console.log("Hey");
+        setMonsterList(fetchMonsters);
+      }
        setDisplayList(<SearchTable monsters = {monsterList} filterText= {filterText} order = {order} sort = {sort}/>);
     }
        
-  },[monsterList,filterText, order, sort] )
+  },[monsterList,filterText, order, sort, fetchMonsters] )
 
     return (<>
     <h1>SEARCH</h1>
@@ -186,27 +198,40 @@ function SearchRow({slug, name, challenge_rating}:any){
 
 }
 function Galery (){
-    const [monsterList, setMonsterList]:any = useState([]);
+  const [monsterList, setMonsterList]:any = useState([]);
+  const [fetchMonsters, setFetchMonsters] = useState([]);
   const [nextPage, setNextPage]:any = useState("https://api.open5e.com/monsters/?document__slug__iexact=wotc-srd");
   const [displayList, setDisplayList]:any = useState(<h1>Loading...</h1>);
   const [filter,setFilter] = useState("all");
 
+
   useEffect(() => {
+    const localMonsters = sessionStorage.getItem("localMonsters");
+    if (localMonsters != null){
+      setMonsterList(JSON.parse(localMonsters));
+    }
     if (nextPage){
           axios
     .get(nextPage)
     .then((page) => {
-      const monsters = monsterList.concat(page.data.results);
-      setMonsterList(monsters);
+      const monsters = fetchMonsters.concat(page.data.results);
+      setFetchMonsters(monsters);
       setNextPage(page.data.next);
     })
     .catch(error => console.log(error))
+    }else{
+      sessionStorage.setItem("localMonsters", JSON.stringify(fetchMonsters));
     }
+
   //Adding the disable-next-line because it doesn't need to run when monsterList is changed, this could affect the rendering of the list.
 
   // eslint-disable-next-line
   }, [nextPage]);
   useEffect (()=>{
+
+    if (fetchMonsters.length >monsterList.length){
+      setMonsterList(fetchMonsters);
+    }
     // eslint-disable-next-line
     const renderedList = monsterList.map((monster:any) => {
       if (filter === "all"){
@@ -218,7 +243,7 @@ function Galery (){
       }
           });
       setDisplayList(renderedList);
-  }, [filter,monsterList]);
+  }, [filter,monsterList, fetchMonsters]);
   return (<div className='Galery'>
   <h1>GALERY</h1>
   <GaleryFilter filter = {filter} onChangeFilter = {setFilter}/>
@@ -252,7 +277,7 @@ function GaleryImage ({monster}:any){
       for (let i = 0; i < monsterTypes.length; i++){
         if (monsterTypes[i].type === lowerCaseMonsterType){
           console.log("Hey");
-          return (<Link to = {"/" + monster.name.toLowerCase()}>
+          return (<Link to = {"/" + monster.name} className='galeryNavbutton'>
                 <div className='monsterImagediv'>
                   <img className='monsterImageimg' src ={monsterTypes[i].file} alt={monster.name}/>
                   <p>{monster.name}</p>
@@ -263,9 +288,11 @@ function GaleryImage ({monster}:any){
       }
       return <></>;
       }else{
-      return (<div className='monsterImagediv'>
+      return (<Link to = {"/" + monster.name} className='galeryNavbutton'>
+            <div className='monsterImagediv'>
             <img className='monsterImageimg' src ={monster.img_main} alt = {monster.name}/>
-          </div>)
+          </div>
+          </Link>)
       }
 
 }
@@ -310,6 +337,204 @@ function GaleryFilter({filter, onChangeFilter}:any){
 
 function DetailedMonster(){
     const {monsterName} = useParams();
-    return <h1>{monsterName}</h1>
+    const [monsterList, setMonsterList]:any = useState([]);
+    const  monsterIndex = useRef(0);
+    const firstRunTest = useRef(false);
+    const [monsterDisplay, setMonsterDisplay] = useState(<h1>Loading...</h1>);
+    const [found, setFound] = useState(false);
+    const [nextPage, setNextPage] = useState("https://api.open5e.com/monsters/?document__slug__iexact=wotc-srd");
+    useEffect(() =>{
+      if(firstRunTest.current === false){
+        firstRunTest.current = true;
+      }else{
+      if (nextPage){
+          axios
+    .get(nextPage)
+    .then((page) => {
+      const monsters = page.data.results;
+      var i = 0;
+      var tempFound = found;
+      setMonsterList(monsterList.concat(page.data.results));
+      while( tempFound === false&&i<monsters.length){
+        if (monsterName) {
+          if(tempFound === false){
+            console.log(i);
+
+            if (monsters[i].name.toLowerCase() === monsterName.toLowerCase()){
+              tempFound = true;
+              setMonsterDisplay(<h1><MonsterStatBlock monster = {monsters[i]}/></h1>);
+
+            }else{
+              i++;
+            }
+          }
+        }
+
+      }
+      monsterIndex.current +=i;
+      setFound(tempFound);
+      setNextPage(page.data.next);
+    })
+    .catch(error => console.log(error))
+    }else{
+      console.log(monsterIndex);
+      if (found === false){
+          setMonsterDisplay(<h1>Not found</h1>);
+      }else{
+        console.log(monsterIndex.current);
+        console.log(monsterList.length)
+        if (monsterIndex.current === 0){
+      setMonsterDisplay(<>
+            <nav className='navbar' >
+                  <Link className='navbutton' to ={"/"+ monsterList[monsterList.length -1].name}>Previous</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current+1].name}>Next</Link>
+                </nav>
+            {monsterDisplay}
+            </>)
+        
+    }else{
+    if (monsterIndex.current === monsterList.length -1){
+      setMonsterDisplay(<>
+            <nav className='navbar' >
+                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current-1].name}>Previous</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[0].name}>Next</Link>
+                </nav>
+            {monsterDisplay}
+            </>)
+      }else{
+        setMonsterDisplay(<>
+          <nav className='navbar' >
+            <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current-1].name}>Previous</Link>
+            <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current +1].name}>Next</Link>
+          </nav>
+          {monsterDisplay}
+        </>)
+      }
+    }
+      }
+    }
+  }
+    // eslint-disable-next-line
+    }, [nextPage, monsterName])
+    useEffect(() =>{
+      if (found === true){
+        var tempFound = false
+        if (nextPage === null){
+          var i = 0;
+          while( tempFound === false&&i<monsterList.length){
+          if (monsterName) {
+            if(tempFound === false){
+              console.log(i);
+              if (monsterList[i].name.toLowerCase() === monsterName.toLowerCase()){
+                tempFound = true;
+              }else{
+                i++;
+              }
+            }
+          }
+
+          }
+          if (i === 0){
+            setMonsterDisplay(<>
+            <nav className='navbar' >
+                  <Link className='navbutton' to ={"/"+ monsterList[monsterList.length -1].name}>Previous</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current+1].name}>Next</Link>
+                </nav>
+            <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
+            </>)
+          }
+          else{if (i === monsterList.length -1){
+              setMonsterDisplay(<>
+            <nav className='navbar' >
+                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current-1].name}>Previous</Link>
+                  <Link className='navbutton' to ={"/"+ monsterList[0].name}>Next</Link>
+                </nav>
+            <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
+            </>)
+          }else{
+              setMonsterDisplay(<>
+            <nav className='navbar' >
+                  <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current-1].name}>Previous</Link>
+                   <Link className='navbutton' to ={"/"+ monsterList[monsterIndex.current+1].name}>Next</Link>
+                </nav>
+            <h1><MonsterStatBlock monster = {monsterList[i]}/></h1>
+            </>)
+          }}
+          monsterIndex.current = i;
+        }else{
+          monsterIndex.current = 0;
+          setNextPage("https://api.open5e.com/monsters/?document__slug__iexact=wotc-srd");
+        }
+      setFound(tempFound)
+      }
+    },[monsterName])
+    
+    return (<div className='detailedMonster'>
+      {monsterDisplay}
+      </div>)
+    ;
 }
+
+function MonsterStatBlock({ monster }:any) {
+  if (!monster) {
+    return <div>No monster data available.</div>;
+  }
+
+  // Helper to calculate a stat modifier
+  const getModifier = (score:any) => {
+    const mod = Math.floor((score - 10) / 2);
+    return mod >= 0 ? `+${mod}` : `${mod}`;
+  };
+
+  return (
+    <div className="stat-block-container">
+      <div className="monster-header">
+        <h2>{monster.name}</h2>
+        <p>
+          <em>{monster.size} {monster.type}, {monster.alignment}</em>
+        </p>
+      </div>
+
+      <div className="divider"></div>
+
+      <div className="monster-stats">
+        <p><strong>Armor Class</strong> {monster.armor_class} ({monster.armor_desc})</p>
+        <p><strong>Hit Points</strong> {monster.hit_points} ({monster.hit_dice})</p>
+        <p><strong>Speed</strong> {Object.entries(monster.speed).map(([type, value]) => `${type} ${value}`).join(', ')}</p>
+      </div>
+
+      <div className="divider"></div>
+
+      <div className="ability-scores">
+        <div><strong>STR</strong><br/>{monster.strength} ({getModifier(monster.strength)})</div>
+        <div><strong>DEX</strong><br/>{monster.dexterity} ({getModifier(monster.dexterity)})</div>
+        <div><strong>CON</strong><br/>{monster.constitution} ({getModifier(monster.constitution)})</div>
+        <div><strong>INT</strong><br/>{monster.intelligence} ({getModifier(monster.intelligence)})</div>
+        <div><strong>WIS</strong><br/>{monster.wisdom} ({getModifier(monster.wisdom)})</div>
+        <div><strong>CHA</strong><br/>{monster.charisma} ({getModifier(monster.charisma)})</div>
+      </div>
+
+      <div className="divider"></div>
+
+      {monster.special_abilities && (
+        <div className="special-abilities">
+          <h3>Special Abilities</h3>
+          {monster.special_abilities.map((ability:any, index:any) => (
+            <p key={index}><strong>{ability.name}.</strong> {ability.desc}</p>
+          ))}
+        </div>
+      )}
+
+      {monster.actions && (
+        <div className="actions">
+          <h3>Actions</h3>
+          {monster.actions.map((action:any, index:any) => (
+            <p key={index}><strong>{action.name}.</strong> {action.desc}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default App;
